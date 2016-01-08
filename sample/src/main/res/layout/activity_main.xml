@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
     <com.antonionicolaspina.textimageview.TextImageView
         android:id="@+id/text_image"
@@ -15,4 +21,4 @@
         app:panEnabled="true"
         app:clampTextMode="textInside"
         android:src="@drawable/sample"/>
-</RelativeLayout>
+</LinearLayout>

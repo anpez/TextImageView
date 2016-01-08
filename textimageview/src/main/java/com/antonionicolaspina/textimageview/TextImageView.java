@@ -182,4 +182,12 @@ public class TextImageView extends ImageView {
   public void setTypeface(Typeface typeface) {
     paint.setTypeface(typeface);
   }
+
+  /**
+   * Return offset position between the text and the image. Considers both top left corners to the the calculation.
+   * @return Pointf containing x and y offsets, as a per-one value. Eg. (0,0)=top-left, (1,1)=bottom-right.
+   */
+  public PointF getTextPosition() {
+    return new PointF(textPosition.x / imageRect.width(), textPosition.y / imageRect.height());
+  }
 }
