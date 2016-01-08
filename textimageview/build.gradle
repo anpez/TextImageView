@@ -1,11 +1,35 @@
 apply plugin: 'com.android.library'
 
+ext {
+  bintrayRepo = 'maven'
+  bintrayName = 'textimageview'
+
+  publishedGroupId = 'com.antonionicolaspina'
+  libraryName = 'TextImageView'
+  artifact = 'textimageview'
+
+  libraryDescription = 'An ImageView subclass that draws a spannable text on top of the image'
+
+  siteUrl = 'https://github.com/ANPez/TextImageView'
+  gitUrl = 'https://github.com/ANPez/TextImageView.git'
+
+  libraryVersion = '1.0'
+
+  developerId = 'anpez'
+  developerName = 'Antonio Nicolás Pina'
+  developerEmail = 'antonio@antonionicolaspina.com'
+
+  licenseName = 'The Apache Software License, Version 2.0'
+  licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+  allLicenses = ["Apache-2.0"]
+}
+
 android {
   compileSdkVersion 23
   buildToolsVersion "23.0.2"
 
   defaultConfig {
-    minSdkVersion 7
+    minSdkVersion 1
     targetSdkVersion 23
     versionCode 1
     versionName "1.0"
@@ -21,5 +45,7 @@ android {
 dependencies {
   compile fileTree(dir: 'libs', include: ['*.jar'])
   testCompile 'junit:junit:4.12'
-  compile 'com.android.support:appcompat-v7:23.1.1'
 }
+
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
