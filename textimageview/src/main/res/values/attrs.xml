@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="TextImageView">
+        <!-- Text being drawn over the image -->
         <attr name="text" format="string" />
+
+        <!-- Color to apply to the text being drawn over the image -->
         <attr name="textColor" format="color" />
+
+        <!-- Size of the text being drawn over the image -->
         <attr name="textSize" format="dimension" />
+
+        <!-- Whether or not to allow the user to move the text -->
         <attr name="panEnabled" format="boolean" />
+
+        <!-- Controls how the the positioning behaves in relation to the image -->
         <attr name="clampTextMode" format="enum">
+            <!-- Do not limit text position -->
             <enum name="unlimited" value="0" />
+            <!-- Top-left corner inside the area of the image -->
             <enum name="originInside" value="1" />
+            <!-- The whole text should fit inside the area of the image -->
             <enum name="textInside" value="2" />
         </attr>
     </declare-styleable>
