@@ -4,5 +4,6 @@
         <attr name="text" format="string" />
         <attr name="textColor" format="color" />
         <attr name="textSize" format="dimension" />
+        <attr name="panEnabled" format="boolean" />
     </declare-styleable>
 </resources>

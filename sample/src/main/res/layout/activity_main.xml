@@ -11,5 +11,6 @@
         app:text="my text"
         app:textSize="30sp"
         app:textColor="#ff0000"
+        app:panEnabled="true"
         android:src="@drawable/sample"/>
 </RelativeLayout>
