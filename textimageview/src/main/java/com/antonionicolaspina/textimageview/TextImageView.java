@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -111,8 +112,8 @@ public class TextImageView extends ImageView {
     focalPoint.y /= pointerCount;
   }
 
-  protected static float between(float x, float min, float max) {
-    return Math.max(Math.min(x, max), min);
+  protected static float between(float value, float min, float max) {
+    return Math.max(Math.min(value, max), min);
   }
 
   @Override
@@ -172,5 +173,13 @@ public class TextImageView extends ImageView {
       paint.getTextBounds(text, 0, text.length(), textRect);
     }
     invalidate();
+  }
+
+  /**
+   * Set the typeface to use for the text.
+   * @param typeface The typeface to be used.
+   */
+  public void setTypeface(Typeface typeface) {
+    paint.setTypeface(typeface);
   }
 }
