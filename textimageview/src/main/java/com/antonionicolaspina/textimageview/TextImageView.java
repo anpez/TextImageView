@@ -16,6 +16,8 @@ import android.view.MotionEvent;
 import android.widget.ImageView;
 
 public class TextImageView extends ImageView {
+  public enum ClampMode {UNLIMITED, ORIGIN_INSIDE, TEXT_INSIDE}
+
   private String text;
   private Paint paint;
   private RectF imageRect;
@@ -25,6 +27,8 @@ public class TextImageView extends ImageView {
   private PointF focalPoint;
 
   private boolean panEnabled;
+
+  private ClampMode clampTextMode;
 
   public TextImageView(Context context) {
     super(context);
@@ -60,7 +64,7 @@ public class TextImageView extends ImageView {
       paint.setTextSize(attrs.getDimensionPixelSize(R.styleable.TextImageView_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size)));
       paint.setColor(attrs.getColor(R.styleable.TextImageView_textColor, Color.BLACK));
       panEnabled = attrs.getBoolean(R.styleable.TextImageView_panEnabled, false);
-
+      clampTextMode = ClampMode.values()[attrs.getInt(R.styleable.TextImageView_clampTextMode, 0)];
       setText(attrs.getString(R.styleable.TextImageView_text));
       attrs.recycle();
     }
@@ -107,6 +111,10 @@ public class TextImageView extends ImageView {
     focalPoint.y /= pointerCount;
   }
 
+  protected static float between(float x, float min, float max) {
+    return Math.max(Math.min(x, max), min);
+  }
+
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     super.onTouchEvent(event);
@@ -127,6 +135,20 @@ public class TextImageView extends ImageView {
         if (panEnabled) {
           textPosition.x += focalPoint.x - x;
           textPosition.y += focalPoint.y - y;
+
+          switch (clampTextMode) {
+            case UNLIMITED:
+              break;
+            case ORIGIN_INSIDE:
+              textPosition.x = between(textPosition.x, 0, imageRect.width());
+              textPosition.y = between(textPosition.y, 0, imageRect.height());
+              break;
+            case TEXT_INSIDE:
+              textPosition.x = between(textPosition.x, 0, imageRect.width()-textRect.width());
+              textPosition.y = between(textPosition.y, 0, imageRect.height()-textRect.height());
+              break;
+          }
+
           invalidate();
         }
 
