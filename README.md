@@ -3,6 +3,8 @@ An ImageView subclass that draws a spannable text on top of the image
 
 [ ![Download](https://api.bintray.com/packages/anpez/maven/textimageview/images/download.svg) ](https://bintray.com/anpez/maven/textimageview/_latestVersion)
 
+[ ![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-TextImageView-green.svg?style=true)](https://android-arsenal.com/details/1/3017)
+
 ![Snapshot](https://raw.githubusercontent.com/ANPez/TextImageView/master/snapshot.gif)
 
 ## Requirements
