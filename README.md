@@ -8,14 +8,14 @@ An ImageView subclass that draws a spannable text on top of the image
 ![Snapshot](https://raw.githubusercontent.com/ANPez/TextImageView/master/snapshot.gif)
 
 ## Requirements
-Android 1.0, API 1
+Android 2.0, API 5
 
 ## Usage
 ### Gradle dependency
 
 ```groovy
 dependencies {
-  compile 'com.antonionicolaspina:textimageview:1.0'
+  compile 'com.antonionicolaspina:textimageview:2.0'
 }
 ```
 
@@ -25,11 +25,11 @@ dependencies {
 <com.antonionicolaspina.textimageview.TextImageView
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    app:text="my text"
-    app:textSize="30sp"
-    app:textColor="#ff0000"
-    app:panEnabled="true"
-    app:clampTextMode="textInside"
+    android:text="my text"
+    android:textSize="30sp"
+    android:textColor="#ff0000"
+    app:tiv_panEnabled="true"
+    app:tiv_clampTextMode="textInside"
     android:src="@drawable/sample"/>
 ```
 
