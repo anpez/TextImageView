@@ -11,6 +11,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -62,11 +63,11 @@ public class TextImageView extends ImageView {
     if (null != attributeSet) {
       TypedArray attrs    = context.getTheme().obtainStyledAttributes(attributeSet, R.styleable.TextImageView, 0, 0);
       Resources resources = context.getResources();
-      paint.setTextSize(attrs.getDimensionPixelSize(R.styleable.TextImageView_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size)));
-      paint.setColor(attrs.getColor(R.styleable.TextImageView_textColor, Color.BLACK));
-      panEnabled = attrs.getBoolean(R.styleable.TextImageView_panEnabled, false);
-      clampTextMode = ClampMode.values()[attrs.getInt(R.styleable.TextImageView_clampTextMode, 0)];
-      setText(attrs.getString(R.styleable.TextImageView_text));
+      paint.setTextSize(attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size)));
+      paint.setColor(attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK));
+      panEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_panEnabled, false);
+      clampTextMode = ClampMode.values()[attrs.getInt(R.styleable.TextImageView_tiv_clampTextMode, 0)];
+      setText(attrs.getString(R.styleable.TextImageView_android_text));
       attrs.recycle();
     }
   }
@@ -86,9 +87,12 @@ public class TextImageView extends ImageView {
     // Get rectangle of the drawable
     imageRect.top    = 0;
     imageRect.left   = 0;
-    imageRect.right  = getDrawable().getIntrinsicWidth();
-    imageRect.bottom = getDrawable().getIntrinsicHeight();
 
+    Drawable drawable = getDrawable();
+    if (null != drawable) {
+      imageRect.right = drawable.getIntrinsicWidth();
+      imageRect.bottom = drawable.getIntrinsicHeight();
+    }
     // Translate and scale the rectangle
     getImageMatrix().mapRect(imageRect);
 

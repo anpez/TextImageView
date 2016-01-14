@@ -15,10 +15,10 @@
         android:id="@+id/text_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:text="my text"
-        app:textSize="30sp"
-        app:textColor="#ff0000"
-        app:panEnabled="true"
-        app:clampTextMode="textInside"
+        android:text="my text"
+        android:textSize="30sp"
+        android:textColor="#ff0000"
+        app:tiv_panEnabled="true"
+        app:tiv_clampTextMode="textInside"
         android:src="@drawable/sample"/>
 </LinearLayout>
