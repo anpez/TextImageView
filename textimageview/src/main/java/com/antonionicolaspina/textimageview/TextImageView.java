@@ -185,6 +185,28 @@ public class TextImageView extends ImageView {
    */
   public void setTypeface(Typeface typeface) {
     paint.setTypeface(typeface);
+    invalidate();
+  }
+
+  /**
+   * Set the text color.
+   * @param color Color in the format of <a href="http://developer.android.com/reference/android/graphics/Color.html">android.graphics.Color</a>.
+   *
+   * @see <a href="http://developer.android.com/reference/android/graphics/Color.html">android.graphics.Color</a>
+   */
+  public void setTextColor(int color) {
+    paint.setColor(color);
+    invalidate();
+  }
+
+  /**
+   * Set the default text size to the given value, interpreted as "scaled pixel" units.
+   * This size is adjusted based on the current density and user font size preference.
+   * @param textSize The scaled pixel size.
+   */
+  public void setTextSize(float textSize) {
+    paint.setTextSize(textSize);
+    invalidate();
   }
 
   /**
