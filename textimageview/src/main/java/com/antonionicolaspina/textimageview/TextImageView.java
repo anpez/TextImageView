@@ -141,18 +141,7 @@ public class TextImageView extends ImageView {
           textPosition.x += focalPoint.x - x;
           textPosition.y += focalPoint.y - y;
 
-          switch (clampTextMode) {
-            case UNLIMITED:
-              break;
-            case ORIGIN_INSIDE:
-              textPosition.x = between(textPosition.x, 0, imageRect.width());
-              textPosition.y = between(textPosition.y, 0, imageRect.height());
-              break;
-            case TEXT_INSIDE:
-              textPosition.x = between(textPosition.x, 0, imageRect.width()-textRect.width());
-              textPosition.y = between(textPosition.y, 0, imageRect.height()-textRect.height());
-              break;
-          }
+          reclampText();
 
           invalidate();
         }
@@ -161,6 +150,21 @@ public class TextImageView extends ImageView {
       }
     }
     return false;
+  }
+
+  protected void reclampText() {
+    switch (clampTextMode) {
+      case UNLIMITED:
+        break;
+      case ORIGIN_INSIDE:
+        textPosition.x = between(textPosition.x, 0, imageRect.width());
+        textPosition.y = between(textPosition.y, 0, imageRect.height());
+        break;
+      case TEXT_INSIDE:
+        textPosition.x = between(textPosition.x, 0, imageRect.width()-textRect.width());
+        textPosition.y = between(textPosition.y, 0, imageRect.height()-textRect.height());
+        break;
+    }
   }
 
   /**************
@@ -176,6 +180,7 @@ public class TextImageView extends ImageView {
     if (null != text) {
       paint.getTextBounds(text, 0, text.length(), textRect);
     }
+    reclampText();
     invalidate();
   }
 
@@ -206,7 +211,7 @@ public class TextImageView extends ImageView {
    */
   public void setTextSize(float textSize) {
     paint.setTextSize(textSize);
-    invalidate();
+    setText(text);
   }
 
   /**

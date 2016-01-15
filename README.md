@@ -15,7 +15,7 @@ Android 2.0, API 5
 
 ```groovy
 dependencies {
-  compile 'com.antonionicolaspina:textimageview:2.0'
+  compile 'com.antonionicolaspina:textimageview:2.1.1'
 }
 ```
 
