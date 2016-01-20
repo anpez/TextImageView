@@ -18,6 +18,10 @@ import android.view.MotionEvent;
 import android.widget.ImageView;
 
 public class TextImageView extends ImageView {
+  public interface OnTextMovedListener {
+    void textMoved(PointF position);
+  }
+
   public enum ClampMode {UNLIMITED, ORIGIN_INSIDE, TEXT_INSIDE}
 
   private String text;
@@ -31,6 +35,8 @@ public class TextImageView extends ImageView {
   private boolean panEnabled;
 
   private ClampMode clampTextMode;
+
+  private OnTextMovedListener onTextMovedListener;
 
   public TextImageView(Context context) {
     super(context);
@@ -165,6 +171,10 @@ public class TextImageView extends ImageView {
         textPosition.y = between(textPosition.y, 0, imageRect.height()-textRect.height());
         break;
     }
+
+    if (null != onTextMovedListener) {
+      onTextMovedListener.textMoved(getTextPosition());
+    }
   }
 
   /**************
@@ -220,5 +230,13 @@ public class TextImageView extends ImageView {
    */
   public PointF getTextPosition() {
     return new PointF(textPosition.x / imageRect.width(), textPosition.y / imageRect.height());
+  }
+
+  /**
+   * Set the listener to be fired when the text changes its location.
+   * @param listener the listener to be called, or null.
+   */
+  public void setOnTextMovedListener(OnTextMovedListener listener) {
+    this.onTextMovedListener = listener;
   }
 }

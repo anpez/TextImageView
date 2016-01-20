@@ -2,7 +2,6 @@ package com.antonionicolaspina.textimageview.sample;
 
 import android.graphics.PointF;
 import android.graphics.Typeface;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -20,14 +19,11 @@ public class MainActivity extends AppCompatActivity {
 
     final TextView textView = (TextView) findViewById(R.id.text);
 
-    final Handler h = new Handler();
-    h.postDelayed(new Runnable() {
+    textImageView.setOnTextMovedListener(new TextImageView.OnTextMovedListener() {
       @Override
-      public void run() {
-        PointF position = textImageView.getTextPosition();
+      public void textMoved(PointF position) {
         textView.setText(String.format("Position: [%.2f%%, %.2f%%]", position.x*100f, position.y*100f));
-        h.postDelayed(this, 100);
       }
-    }, 100);
+    });
   }
 }
