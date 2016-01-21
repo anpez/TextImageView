@@ -203,7 +203,7 @@ public class TextImageView extends ImageView {
    */
   public void setTypeface(Typeface typeface) {
     paint.setTypeface(typeface);
-    invalidate();
+    setText(text);
   }
 
   /**
@@ -241,5 +241,13 @@ public class TextImageView extends ImageView {
    */
   public void setOnTextMovedListener(OnTextMovedListener listener) {
     this.onTextMovedListener = listener;
+  }
+
+  /**
+   * Get the relative size between the image and the text.
+   * @return Relative size. Eg. 0.5=text half the height of the image.
+   */
+  public float getTextRelativeSize() {
+    return paint.getTextSize() / imageRect.height();
   }
 }
