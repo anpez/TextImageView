@@ -63,7 +63,7 @@ public class TextImageView extends ImageView {
     paint        = new Paint(Paint.ANTI_ALIAS_FLAG);
     imageRect    = new RectF();
     textRect     = new Rect();
-    textPosition = new PointF();
+    textPosition = new PointF(0f, 0f);
     focalPoint   = new PointF();
 
     if (null != attributeSet) {
@@ -173,7 +173,10 @@ public class TextImageView extends ImageView {
     }
 
     if (null != onTextMovedListener) {
-      onTextMovedListener.textMoved(getTextPosition());
+      PointF position = getTextPosition();
+      if ( (!Float.isNaN(position.x)) && (!Float.isNaN(position.y)) ) {
+        onTextMovedListener.textMoved(position);
+      }
     }
   }
 
