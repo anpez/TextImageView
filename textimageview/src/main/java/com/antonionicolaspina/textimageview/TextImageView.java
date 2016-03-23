@@ -17,6 +17,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.ImageView;
 
+import java.util.ArrayList;
+
 public class TextImageView extends ImageView {
   public interface OnTextMovedListener {
     void textMoved(PointF position);
@@ -25,10 +27,13 @@ public class TextImageView extends ImageView {
   public enum ClampMode {UNLIMITED, ORIGIN_INSIDE, TEXT_INSIDE}
 
   private String text;
+  private String[] textLines;
   private Paint paint;
   private RectF imageRect;
-  private Rect textRect;
+  private Rect textTotalRect;
+  private ArrayList<Rect> textRects;
   private PointF textPosition;
+  private int interline;
 
   private PointF focalPoint;
 
@@ -60,11 +65,12 @@ public class TextImageView extends ImageView {
   }
 
   protected void init(Context context, AttributeSet attributeSet) {
-    paint        = new Paint(Paint.ANTI_ALIAS_FLAG);
-    imageRect    = new RectF();
-    textRect     = new Rect();
-    textPosition = new PointF(0f, 0f);
-    focalPoint   = new PointF();
+    paint         = new Paint(Paint.ANTI_ALIAS_FLAG);
+    imageRect     = new RectF();
+    textTotalRect = new Rect();
+    textRects     = new ArrayList<>();
+    textPosition  = new PointF(0f, 0f);
+    focalPoint    = new PointF();
 
     if (null != attributeSet) {
       TypedArray attrs    = context.getTheme().obtainStyledAttributes(attributeSet, R.styleable.TextImageView, 0, 0);
@@ -72,6 +78,7 @@ public class TextImageView extends ImageView {
       paint.setTextSize(attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size)));
       paint.setColor(attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK));
       panEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_panEnabled, false);
+      interline = attrs.getDimensionPixelOffset(R.styleable.TextImageView_tiv_interline, 0);
       clampTextMode = ClampMode.values()[attrs.getInt(R.styleable.TextImageView_tiv_clampTextMode, 0)];
       setText(attrs.getString(R.styleable.TextImageView_android_text));
       attrs.recycle();
@@ -83,7 +90,7 @@ public class TextImageView extends ImageView {
     super.onDraw(canvas);
 
     if ( (null == text) && isInEditMode()) {
-      text = "sample text";
+      setText("sample text");
     }
 
     if (null == text) {
@@ -103,7 +110,12 @@ public class TextImageView extends ImageView {
     getImageMatrix().mapRect(imageRect);
 
     // Draw text
-    canvas.drawText(text, textPosition.x+imageRect.left, textPosition.y+imageRect.top+textRect.height(), paint);
+    float top = textPosition.y + imageRect.top;
+    for(int i=0; i<textLines.length; i++) {
+      int h = textRects.get(i).height();
+      canvas.drawText(textLines[i], textPosition.x + imageRect.left, top + h, paint);
+      top += h + interline;
+    }
   }
 
   protected void recalculateFocalPoint(MotionEvent event) {
@@ -167,8 +179,8 @@ public class TextImageView extends ImageView {
         textPosition.y = between(textPosition.y, 0, imageRect.height());
         break;
       case TEXT_INSIDE:
-        textPosition.x = between(textPosition.x, 0, imageRect.width()-textRect.width());
-        textPosition.y = between(textPosition.y, 0, imageRect.height()-textRect.height());
+        textPosition.x = between(textPosition.x, 0, imageRect.width()-textTotalRect.width());
+        textPosition.y = between(textPosition.y, 0, imageRect.height()-textTotalRect.height());
         break;
     }
 
@@ -190,8 +202,23 @@ public class TextImageView extends ImageView {
    */
   public void setText(String text) {
     this.text = text;
+    this.textLines = null;
     if (null != text) {
-      paint.getTextBounds(text, 0, text.length(), textRect);
+      this.textLines = text.split("\n");
+      int height = 0;
+      int width  = 0;
+
+      textRects.clear();
+      for(int i=0; i<textLines.length; i++) {
+        Rect r = new Rect();
+        paint.getTextBounds(textLines[i], 0, textLines[i].length(), r);
+        textRects.add(i, r);
+
+        height += r.height();
+        width   = Math.max(width, r.width());
+      }
+      height += (textLines.length-1)*interline;
+      textTotalRect.set(0, 0, width, height);
     }
     reclampText();
     invalidate();

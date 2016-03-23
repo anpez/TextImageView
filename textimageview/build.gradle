@@ -13,7 +13,7 @@ ext {
   siteUrl = 'https://github.com/ANPez/TextImageView'
   gitUrl = 'https://github.com/ANPez/TextImageView.git'
 
-  libraryVersion = '2.3'
+  libraryVersion = '2.4'
 
   developerId = 'anpez'
   developerName = 'Antonio Nicolás Pina'
@@ -31,8 +31,8 @@ android {
   defaultConfig {
     minSdkVersion 5
     targetSdkVersion 23
-    versionCode 7
-    versionName "2.3"
+    versionCode 8
+    versionName "2.4"
   }
   buildTypes {
     release {

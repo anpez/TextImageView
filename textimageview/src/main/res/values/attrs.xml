@@ -13,6 +13,9 @@
         <!-- Whether or not to allow the user to move the text -->
         <attr name="tiv_panEnabled" format="boolean" />
 
+        <!-- Whether or not to allow the user to move the text -->
+        <attr name="tiv_interline" format="dimension" />
+
         <!-- Controls how the the positioning behaves in relation to the image -->
         <attr name="tiv_clampTextMode" format="enum">
             <!-- Do not limit text position -->

@@ -15,7 +15,7 @@ Android 2.0, API 5
 
 ```groovy
 dependencies {
-  compile 'com.antonionicolaspina:textimageview:2.1.1'
+  compile 'com.antonionicolaspina:textimageview:2.4'
 }
 ```
 
@@ -30,6 +30,7 @@ dependencies {
     android:textColor="#ff0000"
     app:tiv_panEnabled="true"
     app:tiv_clampTextMode="textInside"
+    app:tiv_interline="10sp"
     android:src="@drawable/sample"/>
 ```
 
