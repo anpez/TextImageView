@@ -15,16 +15,22 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
 
-public class TextImageView extends ImageView {
+public class TextImageView extends ImageView implements ScaleGestureDetector.OnScaleGestureListener {
   public interface OnTextMovedListener {
     void textMoved(PointF position);
   }
 
   public enum ClampMode {UNLIMITED, ORIGIN_INSIDE, TEXT_INSIDE}
+
+  private ScaleGestureDetector scaleDetector;
+
+  private float minSize = 1;
+  private float maxSize = 200;
 
   private String text;
   private String[] textLines;
@@ -83,6 +89,8 @@ public class TextImageView extends ImageView {
       setText(attrs.getString(R.styleable.TextImageView_android_text));
       attrs.recycle();
     }
+
+    scaleDetector  = new ScaleGestureDetector(context, this);
   }
 
   @Override
@@ -140,6 +148,7 @@ public class TextImageView extends ImageView {
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
+    scaleDetector.onTouchEvent(event);
     super.onTouchEvent(event);
 
     final int action = event.getAction();
@@ -190,6 +199,24 @@ public class TextImageView extends ImageView {
         onTextMovedListener.textMoved(position);
       }
     }
+  }
+
+
+  @Override
+  public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
+    float newSize = scaleGestureDetector.getScaleFactor()*paint.getTextSize();
+    paint.setTextSize(Math.max(minSize, Math.min(newSize, maxSize)));
+    invalidate();
+    return true;
+  }
+
+  @Override
+  public boolean onScaleBegin(ScaleGestureDetector scaleGestureDetector) {
+    return true;
+  }
+
+  @Override
+  public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
   }
 
   /**************
