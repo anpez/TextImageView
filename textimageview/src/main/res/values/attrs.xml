@@ -10,6 +10,15 @@
         <!-- Size of the text being drawn over the image -->
         <attr name="android:textSize"/>
 
+        <!-- Whether or not to allow the user to scale the text -->
+        <attr name="tiv_scaleEnabled" format="boolean" />
+
+        <!-- Minimum size of the text being drawn over the image -->
+        <attr name="tiv_minTextSize" format="dimension"/>
+
+        <!-- Maximum size of the text being drawn over the image -->
+        <attr name="tiv_maxTextSize" format="dimension"/>
+
         <!-- Whether or not to allow the user to move the text -->
         <attr name="tiv_panEnabled" format="boolean" />
 

@@ -29,8 +29,10 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
 
   private ScaleGestureDetector scaleDetector;
 
-  private float minSize = 1;
-  private float maxSize = 200;
+  private float scale = 1f;
+  private float minSize;
+  private float size;
+  private float maxSize;
 
   private String text;
   private String[] textLines;
@@ -81,16 +83,20 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     if (null != attributeSet) {
       TypedArray attrs    = context.getTheme().obtainStyledAttributes(attributeSet, R.styleable.TextImageView, 0, 0);
       Resources resources = context.getResources();
-      paint.setTextSize(attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size)));
+      size = attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size));
+      paint.setTextSize(size);
       paint.setColor(attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK));
       panEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_panEnabled, false);
       interline = attrs.getDimensionPixelOffset(R.styleable.TextImageView_tiv_interline, 0);
       clampTextMode = ClampMode.values()[attrs.getInt(R.styleable.TextImageView_tiv_clampTextMode, 0)];
       setText(attrs.getString(R.styleable.TextImageView_android_text));
+
+      minSize = attrs.getDimensionPixelSize(R.styleable.TextImageView_tiv_minTextSize, resources.getDimensionPixelSize(R.dimen.default_min_text_size));
+      maxSize = attrs.getDimensionPixelSize(R.styleable.TextImageView_tiv_maxTextSize, resources.getDimensionPixelSize(R.dimen.default_max_text_size));
       attrs.recycle();
     }
 
-    scaleDetector  = new ScaleGestureDetector(context, this);
+    scaleDetector = new ScaleGestureDetector(context, this);
   }
 
   @Override
@@ -122,7 +128,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     for(int i=0; i<textLines.length; i++) {
       int h = textRects.get(i).height();
       canvas.drawText(textLines[i], textPosition.x + imageRect.left, top + h, paint);
-      top += h + interline;
+      top += h + interline*scale;
     }
   }
 
@@ -201,12 +207,13 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     }
   }
 
-
   @Override
   public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-    float newSize = scaleGestureDetector.getScaleFactor()*paint.getTextSize();
-    paint.setTextSize(Math.max(minSize, Math.min(newSize, maxSize)));
-    invalidate();
+    scale *= scaleGestureDetector.getScaleFactor();
+    paint.setTextSize(Math.max(minSize, Math.min(scale*size, maxSize)));
+    scale = paint.getTextSize()/size;
+    setText(text);
+
     return true;
   }
 
@@ -244,7 +251,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
         height += r.height();
         width   = Math.max(width, r.width());
       }
-      height += (textLines.length-1)*interline;
+      height += (textLines.length-1)*interline*scale;
       textTotalRect.set(0, 0, width, height);
     }
     reclampText();
@@ -277,6 +284,8 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
    * @param textSize The scaled pixel size.
    */
   public void setTextSize(float textSize) {
+    scale = 1f;
+    size  = textSize;
     paint.setTextSize(textSize);
     setText(text);
   }

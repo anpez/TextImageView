@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="default_text_size">12sp</dimen>
+    <dimen name="default_min_text_size">8sp</dimen>
+    <dimen name="default_max_text_size">100sp</dimen>
 </resources>
