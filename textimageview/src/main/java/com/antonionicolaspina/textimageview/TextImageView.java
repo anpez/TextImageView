@@ -20,7 +20,7 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 
-public class TextImageView extends ImageView implements ScaleGestureDetector.OnScaleGestureListener {
+public class TextImageView extends ImageView implements ScaleGestureDetector.OnScaleGestureListener, RotationGestureDetector.OnRotationGestureListener {
   public interface OnTextMovedListener {
     void textMoved(PointF position);
   }
@@ -28,6 +28,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   public enum ClampMode {UNLIMITED, ORIGIN_INSIDE, TEXT_INSIDE}
 
   private ScaleGestureDetector scaleDetector;
+  private RotationGestureDetector rotateDetector;
 
   private float scale = 1f;
   private float minSize;
@@ -41,11 +42,17 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   private Rect textTotalRect;
   private ArrayList<Rect> textRects;
   private PointF textPosition;
+  private PointF rotationCenter;
   private int interline;
 
   private PointF focalPoint;
 
+  private float rotation = 0f;
+  private float previousRotation = 0f;
+
   private boolean panEnabled;
+  private boolean scaleEnabled;
+  private boolean rotationEnabled;
 
   private ClampMode clampTextMode;
 
@@ -73,12 +80,13 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   }
 
   protected void init(Context context, AttributeSet attributeSet) {
-    paint         = new Paint(Paint.ANTI_ALIAS_FLAG);
-    imageRect     = new RectF();
-    textTotalRect = new Rect();
-    textRects     = new ArrayList<>();
-    textPosition  = new PointF(0f, 0f);
-    focalPoint    = new PointF();
+    paint          = new Paint(Paint.ANTI_ALIAS_FLAG);
+    imageRect      = new RectF();
+    textTotalRect  = new Rect();
+    textRects      = new ArrayList<>();
+    textPosition   = new PointF(0f, 0f);
+    rotationCenter = new PointF();
+    focalPoint     = new PointF();
 
     if (null != attributeSet) {
       TypedArray attrs    = context.getTheme().obtainStyledAttributes(attributeSet, R.styleable.TextImageView, 0, 0);
@@ -87,6 +95,8 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
       paint.setTextSize(size);
       paint.setColor(attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK));
       panEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_panEnabled, false);
+      scaleEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_scaleEnabled, false);
+      rotationEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_rotationEnabled, false);
       interline = attrs.getDimensionPixelOffset(R.styleable.TextImageView_tiv_interline, 0);
       clampTextMode = ClampMode.values()[attrs.getInt(R.styleable.TextImageView_tiv_clampTextMode, 0)];
       setText(attrs.getString(R.styleable.TextImageView_android_text));
@@ -96,7 +106,8 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
       attrs.recycle();
     }
 
-    scaleDetector = new ScaleGestureDetector(context, this);
+    scaleDetector  = new ScaleGestureDetector(context, this);
+    rotateDetector = new RotationGestureDetector(this);
   }
 
   @Override
@@ -112,8 +123,8 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     }
 
     // Get rectangle of the drawable
-    imageRect.top    = 0;
-    imageRect.left   = 0;
+    imageRect.top  = 0;
+    imageRect.left = 0;
 
     Drawable drawable = getDrawable();
     if (null != drawable) {
@@ -123,13 +134,22 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     // Translate and scale the rectangle
     getImageMatrix().mapRect(imageRect);
 
+    canvas.save();
+    if (rotationEnabled) {
+      canvas.rotate(-rotation, rotationCenter.x, rotationCenter.y);
+    }
+
     // Draw text
     float top = textPosition.y + imageRect.top;
     for(int i=0; i<textLines.length; i++) {
       int h = textRects.get(i).height();
-      canvas.drawText(textLines[i], textPosition.x + imageRect.left, top + h, paint);
+      canvas.save();
+      canvas.translate(textPosition.x + imageRect.left, top + h);
+      canvas.drawText(textLines[i], 0, 0, paint);
+      canvas.restore();
       top += h + interline*scale;
     }
+    canvas.restore();
   }
 
   protected void recalculateFocalPoint(MotionEvent event) {
@@ -155,6 +175,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     scaleDetector.onTouchEvent(event);
+    rotateDetector.onTouchEvent(event);
     super.onTouchEvent(event);
 
     final int action = event.getAction();
@@ -173,6 +194,9 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
         if (panEnabled) {
           textPosition.x += focalPoint.x - x;
           textPosition.y += focalPoint.y - y;
+
+          rotationCenter.x += focalPoint.x - x;
+          rotationCenter.y += focalPoint.y - y;
 
           reclampText();
 
@@ -209,10 +233,12 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
 
   @Override
   public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-    scale *= scaleGestureDetector.getScaleFactor();
-    paint.setTextSize(Math.max(minSize, Math.min(scale*size, maxSize)));
-    scale = paint.getTextSize()/size;
-    setText(text);
+    if (scaleEnabled) {
+      scale *= scaleGestureDetector.getScaleFactor();
+      paint.setTextSize(Math.max(minSize, Math.min(scale * size, maxSize)));
+      scale = paint.getTextSize() / size;
+      setText(text);
+    }
 
     return true;
   }
@@ -224,6 +250,18 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
 
   @Override
   public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
+  }
+
+  @Override
+  public void OnRotation(RotationGestureDetector rotationDetector) {
+    if (rotationEnabled) {
+      rotation += rotationDetector.getAngle() - previousRotation;
+      previousRotation = rotationDetector.getAngle();
+
+      rotationCenter.x = focalPoint.x;
+      rotationCenter.y = focalPoint.y;
+      invalidate();
+    }
   }
 
   /**************

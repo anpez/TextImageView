@@ -22,6 +22,9 @@
         <!-- Whether or not to allow the user to move the text -->
         <attr name="tiv_panEnabled" format="boolean" />
 
+        <!-- Whether or not to allow the user to rotate the text -->
+        <attr name="tiv_rotationEnabled" format="boolean" />
+
         <!-- Whether or not to allow the user to move the text -->
         <attr name="tiv_interline" format="dimension" />
 
