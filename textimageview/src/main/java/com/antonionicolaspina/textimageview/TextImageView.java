@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -213,14 +214,20 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     switch (clampTextMode) {
       case UNLIMITED:
         break;
-      case ORIGIN_INSIDE:
-        textPosition.x = between(textPosition.x, 0, imageRect.width());
-        textPosition.y = between(textPosition.y, 0, imageRect.height());
+      case ORIGIN_INSIDE: {
+        RectF enclosingRect = calculateEnclosingRect();
+        enclosingRect.offset(-imageRect.left, -imageRect.top);
+        textPosition.x -= enclosingRect.left-between(enclosingRect.left, 0, imageRect.width());
+        textPosition.y -= enclosingRect.top-between(enclosingRect.top, 0, imageRect.height());
         break;
-      case TEXT_INSIDE:
-        textPosition.x = between(textPosition.x, 0, imageRect.width()-textTotalRect.width());
-        textPosition.y = between(textPosition.y, 0, imageRect.height()-textTotalRect.height());
+      }
+      case TEXT_INSIDE: {
+        RectF enclosingRect = calculateEnclosingRect();
+        enclosingRect.offset(-imageRect.left, -imageRect.top);
+        textPosition.x -= enclosingRect.left - between(enclosingRect.left, 0, imageRect.width()-enclosingRect.width());
+        textPosition.y -= enclosingRect.top - between(enclosingRect.top, 0, imageRect.height()-enclosingRect.height());
         break;
+      }
     }
 
     if (null != onTextMovedListener) {
@@ -229,6 +236,35 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
         onTextMovedListener.textMoved(position);
       }
     }
+  }
+
+  protected RectF calculateEnclosingRect() {
+    Matrix mat = new Matrix();
+    RectF globalRect = new RectF();
+    float top = textPosition.y;
+    for(int i=0; i<textLines.length; i++) {
+      int h = textRects.get(i).height();
+      RectF rect = new RectF(0, 0, textRects.get(i).width(), h);
+      rect.offset(imageRect.left, imageRect.top);
+
+      mat.reset();
+      mat.preRotate(-rotation, rotationCenter.x, rotationCenter.y);
+      mat.preTranslate(textPosition.x, top);
+
+      mat.mapRect(rect);
+
+      if (0 == i) {
+        globalRect.set(rect);
+      } else {
+        globalRect.top = Math.min(globalRect.top, rect.top);
+        globalRect.left = Math.min(globalRect.left, rect.left);
+        globalRect.bottom = Math.max(globalRect.bottom, rect.bottom);
+        globalRect.right = Math.max(globalRect.right, rect.right);
+      }
+      top += h + interline*scale;
+    }
+
+    return globalRect;
   }
 
   @Override
@@ -333,7 +369,9 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
    * @return Pointf containing x and y offsets, as a per-one value. Eg. (0,0)=top-left, (1,1)=bottom-right.
    */
   public PointF getTextPosition() {
-    return new PointF(textPosition.x / imageRect.width(), textPosition.y / imageRect.height());
+    RectF enclosingRect = calculateEnclosingRect();
+    enclosingRect.offset(-imageRect.left, -imageRect.top);
+    return new PointF(enclosingRect.left / imageRect.width(), enclosingRect.top / imageRect.height());
   }
 
   /**
