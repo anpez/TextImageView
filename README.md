@@ -1,5 +1,5 @@
 # TextImageView
-An ImageView subclass that draws a spannable text on top of the image
+An ImageView subclass that draws one or more spannable, rotable, scalable texts on top of the image.
 
 [ ![Download](https://api.bintray.com/packages/anpez/maven/textimageview/images/download.svg) ](https://bintray.com/anpez/maven/textimageview/_latestVersion)
 
@@ -7,15 +7,21 @@ An ImageView subclass that draws a spannable text on top of the image
 
 ![Snapshot](https://raw.githubusercontent.com/ANPez/TextImageView/master/snapshot.gif)
 
+Provided that this is an ImageView subclass, you can use Picasso, Glide, or any Image loader that you like to load the image into TextImageView.
+
+## New in 3.0
+You can enable text scale and rotation via multitouch gestures just by declaring it in your layout.
+Now you can stack multiple texts one on top of the other and control them.
+
 ## Requirements
-Android 2.0, API 5
+Android 2.2, API 8
 
 ## Usage
 ### Gradle dependency
 
 ```groovy
 dependencies {
-  compile 'com.antonionicolaspina:textimageview:2.4'
+  compile 'com.antonionicolaspina:textimageview:3.0.0'
 }
 ```
 
@@ -31,6 +37,8 @@ dependencies {
     app:tiv_panEnabled="true"
     app:tiv_clampTextMode="textInside"
     app:tiv_interline="10sp"
+    app:tiv_scaleEnabled="true"
+    app:tiv_rotationEnabled="true"
     android:src="@drawable/sample"/>
 ```
 

@@ -8,12 +8,12 @@ ext {
   libraryName = 'TextImageView'
   artifact = 'textimageview'
 
-  libraryDescription = 'An ImageView subclass that draws a spannable text on top of the image'
+  libraryDescription = 'An ImageView subclass that draws one or more spannable, rotable, scalable texts on top of the image'
 
   siteUrl = 'https://github.com/ANPez/TextImageView'
   gitUrl = 'https://github.com/ANPez/TextImageView.git'
 
-  libraryVersion = '2.4'
+  libraryVersion = '3.0.0'
 
   developerId = 'anpez'
   developerName = 'Antonio Nicolás Pina'
@@ -31,8 +31,8 @@ android {
   defaultConfig {
     minSdkVersion 8
     targetSdkVersion 23
-    versionCode 8
-    versionName "2.4"
+    versionCode 9
+    versionName "3.0.0"
   }
   buildTypes {
     release {
