@@ -25,39 +25,76 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   public interface OnTextMovedListener {
     void textMoved(PointF position);
   }
+  protected static class TextProperties {
+    private String text;
+
+    public float scale;
+    public float size;
+    public String[] textLines;
+    public Paint paint;
+    public ArrayList<Rect> textRects;
+    public PointF textPosition;
+    public PointF rotationCenter;
+    public float rotation;
+
+    public TextProperties(String text, float size, int color) {
+      this.scale = 1f;
+      this.size = size;
+      this.paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      this.textRects = new ArrayList<>();
+      this.textPosition = new PointF(0f, 0f);
+      this.rotationCenter = new PointF();
+      this.rotation = 0f;
+
+      paint.setColor(color);
+      paint.setTextSize(size);
+      setText(text);
+    }
+
+    public void setText(String text) {
+      this.text = text;
+      this.textLines = null;
+      if (null != text) {
+        this.textLines = text.split("\n");
+
+        textRects.clear();
+        for(int i=0; i<textLines.length; i++) {
+          Rect r = new Rect();
+          paint.getTextBounds(textLines[i], 0, textLines[i].length(), r);
+          textRects.add(i, r);
+        }
+      }
+    }
+
+    public String getText() {
+      return text;
+    }
+  }
 
   public enum ClampMode {UNLIMITED, ORIGIN_INSIDE, TEXT_INSIDE}
 
   private ScaleGestureDetector scaleDetector;
   private RotationGestureDetector rotateDetector;
 
-  private float scale = 1f;
+  // region Global parameters
   private float minSize;
-  private float size;
   private float maxSize;
-
-  private String text;
-  private String[] textLines;
-  private Paint paint;
-  private RectF imageRect;
-  private Rect textTotalRect;
-  private ArrayList<Rect> textRects;
-  private PointF textPosition;
-  private PointF rotationCenter;
-  private int interline;
-
-  private PointF focalPoint;
-
-  private float rotation = 0f;
-  private float previousRotation = 0f;
-
   private boolean panEnabled;
   private boolean scaleEnabled;
   private boolean rotationEnabled;
-
   private ClampMode clampTextMode;
+  private int interline;
+  private RectF imageRect;
+  // endregion
 
+  // region Other members
+  private PointF focalPoint;
   private OnTextMovedListener onTextMovedListener;
+  private float previousRotation = 0f;
+  private ArrayList<TextProperties> texts;
+  private int currentSize;
+  private int currentColor;
+  // endregion
 
   public TextImageView(Context context) {
     super(context);
@@ -81,20 +118,17 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   }
 
   protected void init(Context context, AttributeSet attributeSet) {
-    paint          = new Paint(Paint.ANTI_ALIAS_FLAG);
-    imageRect      = new RectF();
-    textTotalRect  = new Rect();
-    textRects      = new ArrayList<>();
-    textPosition   = new PointF(0f, 0f);
-    rotationCenter = new PointF();
-    focalPoint     = new PointF();
+    texts = new ArrayList<>();
+
+    imageRect  = new RectF();
+    focalPoint = new PointF();
+
+    Resources resources = context.getResources();
 
     if (null != attributeSet) {
       TypedArray attrs    = context.getTheme().obtainStyledAttributes(attributeSet, R.styleable.TextImageView, 0, 0);
-      Resources resources = context.getResources();
-      size = attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size));
-      paint.setTextSize(size);
-      paint.setColor(attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK));
+      currentSize = attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size));
+      currentColor = attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK);
       panEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_panEnabled, false);
       scaleEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_scaleEnabled, false);
       rotationEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_rotationEnabled, false);
@@ -115,12 +149,8 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
 
-    if ( (null == text) && isInEditMode()) {
+    if ( isInEditMode() && (0 == texts.size()) ) {
       setText("sample text");
-    }
-
-    if (null == text) {
-      return;
     }
 
     // Get rectangle of the drawable
@@ -135,22 +165,24 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     // Translate and scale the rectangle
     getImageMatrix().mapRect(imageRect);
 
-    canvas.save();
-    if (rotationEnabled) {
-      canvas.rotate(-rotation, rotationCenter.x, rotationCenter.y);
-    }
-
-    // Draw text
-    float top = textPosition.y + imageRect.top;
-    for(int i=0; i<textLines.length; i++) {
-      int h = textRects.get(i).height();
+    for(TextProperties tp: texts) {
       canvas.save();
-      canvas.translate(textPosition.x + imageRect.left, top + h);
-      canvas.drawText(textLines[i], 0, 0, paint);
+      if (rotationEnabled) {
+        canvas.rotate(-tp.rotation, tp.rotationCenter.x, tp.rotationCenter.y);
+      }
+
+      // Draw text
+      float top = tp.textPosition.y + imageRect.top;
+      for (int i = 0; i < tp.textLines.length; i++) {
+        int h = tp.textRects.get(i).height();
+        canvas.save();
+        canvas.translate(tp.textPosition.x + imageRect.left, top + h);
+        canvas.drawText(tp.textLines[i], 0, 0, tp.paint);
+        canvas.restore();
+        top += h + interline * tp.scale;
+      }
       canvas.restore();
-      top += h + interline*scale;
     }
-    canvas.restore();
   }
 
   protected void recalculateFocalPoint(MotionEvent event) {
@@ -186,46 +218,54 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
       case MotionEvent.ACTION_POINTER_UP:
         recalculateFocalPoint(event);
         return true;
-      case MotionEvent.ACTION_MOVE: {
-        final float x = focalPoint.x;
-        final float y = focalPoint.y;
+      case MotionEvent.ACTION_MOVE:
+        if (0 < texts.size()) {
+          final float x = focalPoint.x;
+          final float y = focalPoint.y;
+          TextProperties tp = texts.get(texts.size() - 1);
 
-        recalculateFocalPoint(event);
+          recalculateFocalPoint(event);
 
-        if (panEnabled) {
-          textPosition.x += focalPoint.x - x;
-          textPosition.y += focalPoint.y - y;
+          if (panEnabled) {
+            tp.textPosition.x += focalPoint.x - x;
+            tp.textPosition.y += focalPoint.y - y;
 
-          rotationCenter.x += focalPoint.x - x;
-          rotationCenter.y += focalPoint.y - y;
+            tp.rotationCenter.x += focalPoint.x - x;
+            tp.rotationCenter.y += focalPoint.y - y;
 
-          reclampText();
+            reclampText();
 
-          invalidate();
+            invalidate();
+          }
         }
-
         return true;
-      }
     }
     return false;
   }
 
   protected void reclampText() {
+    if (0 == texts.size()) {
+      return;
+    }
+
+    TextProperties tp = texts.get(texts.size()-1);
     switch (clampTextMode) {
       case UNLIMITED:
         break;
       case ORIGIN_INSIDE: {
         RectF enclosingRect = calculateEnclosingRect();
         enclosingRect.offset(-imageRect.left, -imageRect.top);
-        textPosition.x -= enclosingRect.left-between(enclosingRect.left, 0, imageRect.width());
-        textPosition.y -= enclosingRect.top-between(enclosingRect.top, 0, imageRect.height());
+        tp.textPosition.x -= enclosingRect.left-between(enclosingRect.left, 0, imageRect.width());
+        tp.textPosition.y -= enclosingRect.top-between(enclosingRect.top, 0, imageRect.height());
+        invalidate();
         break;
       }
       case TEXT_INSIDE: {
         RectF enclosingRect = calculateEnclosingRect();
         enclosingRect.offset(-imageRect.left, -imageRect.top);
-        textPosition.x -= enclosingRect.left - between(enclosingRect.left, 0, imageRect.width()-enclosingRect.width());
-        textPosition.y -= enclosingRect.top - between(enclosingRect.top, 0, imageRect.height()-enclosingRect.height());
+        tp.textPosition.x -= enclosingRect.left - between(enclosingRect.left, 0, imageRect.width()-enclosingRect.width());
+        tp.textPosition.y -= enclosingRect.top - between(enclosingRect.top, 0, imageRect.height()-enclosingRect.height());
+        invalidate();
         break;
       }
     }
@@ -239,17 +279,23 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   }
 
   protected RectF calculateEnclosingRect() {
+    if (0 == texts.size()) {
+      return null;
+    }
+
+    TextProperties tp = texts.get(texts.size()-1);
+
     Matrix mat = new Matrix();
     RectF globalRect = new RectF();
-    float top = textPosition.y;
-    for(int i=0; i<textLines.length; i++) {
-      int h = textRects.get(i).height();
-      RectF rect = new RectF(0, 0, textRects.get(i).width(), h);
+    float top = tp.textPosition.y;
+    for(int i=0; i<tp.textLines.length; i++) {
+      int h = tp.textRects.get(i).height();
+      RectF rect = new RectF(0, 0, tp.textRects.get(i).width(), h);
       rect.offset(imageRect.left, imageRect.top);
 
       mat.reset();
-      mat.preRotate(-rotation, rotationCenter.x, rotationCenter.y);
-      mat.preTranslate(textPosition.x, top);
+      mat.preRotate(-tp.rotation, tp.rotationCenter.x, tp.rotationCenter.y);
+      mat.preTranslate(tp.textPosition.x, top);
 
       mat.mapRect(rect);
 
@@ -261,7 +307,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
         globalRect.bottom = Math.max(globalRect.bottom, rect.bottom);
         globalRect.right = Math.max(globalRect.right, rect.right);
       }
-      top += h + interline*scale;
+      top += h + interline*tp.scale;
     }
 
     return globalRect;
@@ -269,11 +315,13 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
 
   @Override
   public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-    if (scaleEnabled) {
-      scale *= scaleGestureDetector.getScaleFactor();
-      paint.setTextSize(Math.max(minSize, Math.min(scale * size, maxSize)));
-      scale = paint.getTextSize() / size;
-      setText(text);
+    if (scaleEnabled && (0<texts.size())) {
+      TextProperties tp = texts.get(texts.size()-1);
+      tp.scale *= scaleGestureDetector.getScaleFactor();
+      tp.paint.setTextSize(Math.max(minSize, Math.min(tp.scale * tp.size, maxSize)));
+      tp.scale = tp.paint.getTextSize() / tp.size;
+      reclampText();
+      invalidate();
     }
 
     return true;
@@ -290,12 +338,13 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
 
   @Override
   public void OnRotation(RotationGestureDetector rotationDetector) {
-    if (rotationEnabled) {
-      rotation += rotationDetector.getAngle() - previousRotation;
+    if (rotationEnabled && (0<texts.size())) {
+      TextProperties tp = texts.get(texts.size()-1);
+      tp.rotation += rotationDetector.getAngle() - previousRotation;
       previousRotation = rotationDetector.getAngle();
 
-      rotationCenter.x = focalPoint.x;
-      rotationCenter.y = focalPoint.y;
+      tp.rotationCenter.x = focalPoint.x;
+      tp.rotationCenter.y = focalPoint.y;
       invalidate();
     }
   }
@@ -309,27 +358,30 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
    * @param text The text.
    */
   public void setText(String text) {
-    this.text = text;
-    this.textLines = null;
+    texts.clear();
+    addText(text);
+  }
+
+  /**
+   * Adds a text to be drawn over the image, above existing texts.
+   * @param text The text.
+   */
+  public void addText(String text) {
     if (null != text) {
-      this.textLines = text.split("\n");
-      int height = 0;
-      int width  = 0;
-
-      textRects.clear();
-      for(int i=0; i<textLines.length; i++) {
-        Rect r = new Rect();
-        paint.getTextBounds(textLines[i], 0, textLines[i].length(), r);
-        textRects.add(i, r);
-
-        height += r.height();
-        width   = Math.max(width, r.width());
-      }
-      height += (textLines.length-1)*interline*scale;
-      textTotalRect.set(0, 0, width, height);
+      texts.add(new TextProperties(text, currentSize, currentColor));
+      reclampText();
+      invalidate();
     }
-    reclampText();
-    invalidate();
+  }
+
+  /**
+   * Removes the text on the top of the stack.
+   */
+  public void removeText() {
+    if (0 < texts.size()) {
+      texts.remove(texts.size()-1);
+      invalidate();
+    }
   }
 
   /**
@@ -337,8 +389,10 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
    * @param typeface The typeface to be used.
    */
   public void setTypeface(Typeface typeface) {
-    paint.setTypeface(typeface);
-    setText(text);
+    TextProperties tp = texts.get(texts.size()-1);
+    tp.paint.setTypeface(typeface);
+    reclampText();
+    invalidate();
   }
 
   /**
@@ -348,7 +402,8 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
    * @see <a href="http://developer.android.com/reference/android/graphics/Color.html">android.graphics.Color</a>
    */
   public void setTextColor(int color) {
-    paint.setColor(color);
+    TextProperties tp = texts.get(texts.size()-1);
+    tp.paint.setColor(color);
     invalidate();
   }
 
@@ -358,10 +413,12 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
    * @param textSize The scaled pixel size.
    */
   public void setTextSize(float textSize) {
-    scale = 1f;
-    size  = textSize;
-    paint.setTextSize(textSize);
-    setText(text);
+    TextProperties tp = texts.get(texts.size()-1);
+    tp.scale = 1f;
+    tp.size  = textSize;
+    tp.paint.setTextSize(textSize);
+    reclampText();
+    invalidate();
   }
 
   /**
@@ -387,6 +444,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
    * @return Relative size. Eg. 0.5=text half the height of the image.
    */
   public float getTextRelativeSize() {
-    return paint.getTextSize() / imageRect.height();
+    TextProperties tp = texts.get(texts.size()-1);
+    return tp.paint.getTextSize() / imageRect.height();
   }
 }

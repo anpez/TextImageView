@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
     textImageView.setOnTextMovedListener(new TextImageView.OnTextMovedListener() {
       @Override
       public void textMoved(PointF position) {
-        textView.setText(String.format("Position: [%.2f%%, %.2f%%]", position.x*100f, position.y*100f));
+        textView.setText(String.format("Position: [%.2f%%, %.2f%%]", position.x * 100f, position.y * 100f));
       }
     });
   }
