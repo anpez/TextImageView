@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -15,33 +16,85 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
 
-public class TextImageView extends ImageView {
+public class TextImageView extends ImageView implements ScaleGestureDetector.OnScaleGestureListener, RotationGestureDetector.OnRotationGestureListener {
   public interface OnTextMovedListener {
     void textMoved(PointF position);
+  }
+  protected static class TextProperties {
+    private String text;
+
+    public float scale;
+    public float size;
+    public String[] textLines;
+    public Paint paint;
+    public ArrayList<Rect> textRects;
+    public PointF textPosition;
+    public PointF rotationCenter;
+    public float rotation;
+
+    public TextProperties(String text, float size, int color) {
+      this.scale = 1f;
+      this.size = size;
+      this.paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      this.textRects = new ArrayList<>();
+      this.textPosition = new PointF(0f, 0f);
+      this.rotationCenter = new PointF();
+      this.rotation = 0f;
+
+      paint.setColor(color);
+      paint.setTextSize(size);
+      setText(text);
+    }
+
+    public void setText(String text) {
+      this.text = text;
+      this.textLines = null;
+      if (null != text) {
+        this.textLines = text.split("\n");
+
+        textRects.clear();
+        for(int i=0; i<textLines.length; i++) {
+          Rect r = new Rect();
+          paint.getTextBounds(textLines[i], 0, textLines[i].length(), r);
+          textRects.add(i, r);
+        }
+      }
+    }
+
+    public String getText() {
+      return text;
+    }
   }
 
   public enum ClampMode {UNLIMITED, ORIGIN_INSIDE, TEXT_INSIDE}
 
-  private String text;
-  private String[] textLines;
-  private Paint paint;
-  private RectF imageRect;
-  private Rect textTotalRect;
-  private ArrayList<Rect> textRects;
-  private PointF textPosition;
-  private int interline;
+  private ScaleGestureDetector scaleDetector;
+  private RotationGestureDetector rotateDetector;
 
-  private PointF focalPoint;
-
+  // region Global parameters
+  private float minSize;
+  private float maxSize;
   private boolean panEnabled;
-
+  private boolean scaleEnabled;
+  private boolean rotationEnabled;
   private ClampMode clampTextMode;
+  private int interline;
+  private RectF imageRect;
+  // endregion
 
+  // region Other members
+  private PointF focalPoint;
   private OnTextMovedListener onTextMovedListener;
+  private float previousRotation = 0f;
+  private ArrayList<TextProperties> texts;
+  private int currentSize;
+  private int currentColor;
+  // endregion
 
   public TextImageView(Context context) {
     super(context);
@@ -65,41 +118,44 @@ public class TextImageView extends ImageView {
   }
 
   protected void init(Context context, AttributeSet attributeSet) {
-    paint         = new Paint(Paint.ANTI_ALIAS_FLAG);
-    imageRect     = new RectF();
-    textTotalRect = new Rect();
-    textRects     = new ArrayList<>();
-    textPosition  = new PointF(0f, 0f);
-    focalPoint    = new PointF();
+    texts = new ArrayList<>();
+
+    imageRect  = new RectF();
+    focalPoint = new PointF();
+
+    Resources resources = context.getResources();
 
     if (null != attributeSet) {
       TypedArray attrs    = context.getTheme().obtainStyledAttributes(attributeSet, R.styleable.TextImageView, 0, 0);
-      Resources resources = context.getResources();
-      paint.setTextSize(attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size)));
-      paint.setColor(attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK));
+      currentSize = attrs.getDimensionPixelSize(R.styleable.TextImageView_android_textSize, resources.getDimensionPixelSize(R.dimen.default_text_size));
+      currentColor = attrs.getColor(R.styleable.TextImageView_android_textColor, Color.BLACK);
       panEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_panEnabled, false);
+      scaleEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_scaleEnabled, false);
+      rotationEnabled = attrs.getBoolean(R.styleable.TextImageView_tiv_rotationEnabled, false);
       interline = attrs.getDimensionPixelOffset(R.styleable.TextImageView_tiv_interline, 0);
       clampTextMode = ClampMode.values()[attrs.getInt(R.styleable.TextImageView_tiv_clampTextMode, 0)];
       setText(attrs.getString(R.styleable.TextImageView_android_text));
+
+      minSize = attrs.getDimensionPixelSize(R.styleable.TextImageView_tiv_minTextSize, resources.getDimensionPixelSize(R.dimen.default_min_text_size));
+      maxSize = attrs.getDimensionPixelSize(R.styleable.TextImageView_tiv_maxTextSize, resources.getDimensionPixelSize(R.dimen.default_max_text_size));
       attrs.recycle();
     }
+
+    scaleDetector  = new ScaleGestureDetector(context, this);
+    rotateDetector = new RotationGestureDetector(this);
   }
 
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
 
-    if ( (null == text) && isInEditMode()) {
+    if ( isInEditMode() && (0 == texts.size()) ) {
       setText("sample text");
     }
 
-    if (null == text) {
-      return;
-    }
-
     // Get rectangle of the drawable
-    imageRect.top    = 0;
-    imageRect.left   = 0;
+    imageRect.top  = 0;
+    imageRect.left = 0;
 
     Drawable drawable = getDrawable();
     if (null != drawable) {
@@ -109,12 +165,23 @@ public class TextImageView extends ImageView {
     // Translate and scale the rectangle
     getImageMatrix().mapRect(imageRect);
 
-    // Draw text
-    float top = textPosition.y + imageRect.top;
-    for(int i=0; i<textLines.length; i++) {
-      int h = textRects.get(i).height();
-      canvas.drawText(textLines[i], textPosition.x + imageRect.left, top + h, paint);
-      top += h + interline;
+    for(TextProperties tp: texts) {
+      canvas.save();
+      if (rotationEnabled) {
+        canvas.rotate(-tp.rotation, tp.rotationCenter.x, tp.rotationCenter.y);
+      }
+
+      // Draw text
+      float top = tp.textPosition.y + imageRect.top;
+      for (int i = 0; i < tp.textLines.length; i++) {
+        int h = tp.textRects.get(i).height();
+        canvas.save();
+        canvas.translate(tp.textPosition.x + imageRect.left, top + h);
+        canvas.drawText(tp.textLines[i], 0, 0, tp.paint);
+        canvas.restore();
+        top += h + interline * tp.scale;
+      }
+      canvas.restore();
     }
   }
 
@@ -140,6 +207,8 @@ public class TextImageView extends ImageView {
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
+    scaleDetector.onTouchEvent(event);
+    rotateDetector.onTouchEvent(event);
     super.onTouchEvent(event);
 
     final int action = event.getAction();
@@ -149,39 +218,56 @@ public class TextImageView extends ImageView {
       case MotionEvent.ACTION_POINTER_UP:
         recalculateFocalPoint(event);
         return true;
-      case MotionEvent.ACTION_MOVE: {
-        final float x = focalPoint.x;
-        final float y = focalPoint.y;
+      case MotionEvent.ACTION_MOVE:
+        if (0 < texts.size()) {
+          final float x = focalPoint.x;
+          final float y = focalPoint.y;
+          TextProperties tp = texts.get(texts.size() - 1);
 
-        recalculateFocalPoint(event);
+          recalculateFocalPoint(event);
 
-        if (panEnabled) {
-          textPosition.x += focalPoint.x - x;
-          textPosition.y += focalPoint.y - y;
+          if (panEnabled) {
+            tp.textPosition.x += focalPoint.x - x;
+            tp.textPosition.y += focalPoint.y - y;
 
-          reclampText();
+            tp.rotationCenter.x += focalPoint.x - x;
+            tp.rotationCenter.y += focalPoint.y - y;
 
-          invalidate();
+            reclampText();
+
+            invalidate();
+          }
         }
-
         return true;
-      }
     }
     return false;
   }
 
   protected void reclampText() {
+    if (0 == texts.size()) {
+      return;
+    }
+
+    TextProperties tp = texts.get(texts.size()-1);
     switch (clampTextMode) {
       case UNLIMITED:
         break;
-      case ORIGIN_INSIDE:
-        textPosition.x = between(textPosition.x, 0, imageRect.width());
-        textPosition.y = between(textPosition.y, 0, imageRect.height());
+      case ORIGIN_INSIDE: {
+        RectF enclosingRect = calculateEnclosingRect();
+        enclosingRect.offset(-imageRect.left, -imageRect.top);
+        tp.textPosition.x -= enclosingRect.left-between(enclosingRect.left, 0, imageRect.width());
+        tp.textPosition.y -= enclosingRect.top-between(enclosingRect.top, 0, imageRect.height());
+        invalidate();
         break;
-      case TEXT_INSIDE:
-        textPosition.x = between(textPosition.x, 0, imageRect.width()-textTotalRect.width());
-        textPosition.y = between(textPosition.y, 0, imageRect.height()-textTotalRect.height());
+      }
+      case TEXT_INSIDE: {
+        RectF enclosingRect = calculateEnclosingRect();
+        enclosingRect.offset(-imageRect.left, -imageRect.top);
+        tp.textPosition.x -= enclosingRect.left - between(enclosingRect.left, 0, imageRect.width()-enclosingRect.width());
+        tp.textPosition.y -= enclosingRect.top - between(enclosingRect.top, 0, imageRect.height()-enclosingRect.height());
+        invalidate();
         break;
+      }
     }
 
     if (null != onTextMovedListener) {
@@ -189,6 +275,77 @@ public class TextImageView extends ImageView {
       if ( (!Float.isNaN(position.x)) && (!Float.isNaN(position.y)) ) {
         onTextMovedListener.textMoved(position);
       }
+    }
+  }
+
+  protected RectF calculateEnclosingRect() {
+    if (0 == texts.size()) {
+      return null;
+    }
+
+    TextProperties tp = texts.get(texts.size()-1);
+
+    Matrix mat = new Matrix();
+    RectF globalRect = new RectF();
+    float top = tp.textPosition.y;
+    for(int i=0; i<tp.textLines.length; i++) {
+      int h = tp.textRects.get(i).height();
+      RectF rect = new RectF(0, 0, tp.textRects.get(i).width(), h);
+      rect.offset(imageRect.left, imageRect.top);
+
+      mat.reset();
+      mat.preRotate(-tp.rotation, tp.rotationCenter.x, tp.rotationCenter.y);
+      mat.preTranslate(tp.textPosition.x, top);
+
+      mat.mapRect(rect);
+
+      if (0 == i) {
+        globalRect.set(rect);
+      } else {
+        globalRect.top = Math.min(globalRect.top, rect.top);
+        globalRect.left = Math.min(globalRect.left, rect.left);
+        globalRect.bottom = Math.max(globalRect.bottom, rect.bottom);
+        globalRect.right = Math.max(globalRect.right, rect.right);
+      }
+      top += h + interline*tp.scale;
+    }
+
+    return globalRect;
+  }
+
+  @Override
+  public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
+    if (scaleEnabled && (0<texts.size())) {
+      TextProperties tp = texts.get(texts.size()-1);
+      tp.scale *= scaleGestureDetector.getScaleFactor();
+      tp.paint.setTextSize(Math.max(minSize, Math.min(tp.scale * tp.size, maxSize)));
+      tp.scale = tp.paint.getTextSize() / tp.size;
+      reclampText();
+      invalidate();
+    }
+
+    return true;
+  }
+
+  @Override
+  public boolean onScaleBegin(ScaleGestureDetector scaleGestureDetector) {
+    return true;
+  }
+
+  @Override
+  public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
+  }
+
+  @Override
+  public void OnRotation(RotationGestureDetector rotationDetector) {
+    if (rotationEnabled && (0<texts.size())) {
+      TextProperties tp = texts.get(texts.size()-1);
+      tp.rotation += rotationDetector.getAngle() - previousRotation;
+      previousRotation = rotationDetector.getAngle();
+
+      tp.rotationCenter.x = focalPoint.x;
+      tp.rotationCenter.y = focalPoint.y;
+      invalidate();
     }
   }
 
@@ -201,27 +358,30 @@ public class TextImageView extends ImageView {
    * @param text The text.
    */
   public void setText(String text) {
-    this.text = text;
-    this.textLines = null;
+    texts.clear();
+    addText(text);
+  }
+
+  /**
+   * Adds a text to be drawn over the image, above existing texts.
+   * @param text The text.
+   */
+  public void addText(String text) {
     if (null != text) {
-      this.textLines = text.split("\n");
-      int height = 0;
-      int width  = 0;
-
-      textRects.clear();
-      for(int i=0; i<textLines.length; i++) {
-        Rect r = new Rect();
-        paint.getTextBounds(textLines[i], 0, textLines[i].length(), r);
-        textRects.add(i, r);
-
-        height += r.height();
-        width   = Math.max(width, r.width());
-      }
-      height += (textLines.length-1)*interline;
-      textTotalRect.set(0, 0, width, height);
+      texts.add(new TextProperties(text, currentSize, currentColor));
+      reclampText();
+      invalidate();
     }
-    reclampText();
-    invalidate();
+  }
+
+  /**
+   * Removes the text on the top of the stack.
+   */
+  public void removeText() {
+    if (0 < texts.size()) {
+      texts.remove(texts.size()-1);
+      invalidate();
+    }
   }
 
   /**
@@ -229,8 +389,10 @@ public class TextImageView extends ImageView {
    * @param typeface The typeface to be used.
    */
   public void setTypeface(Typeface typeface) {
-    paint.setTypeface(typeface);
-    setText(text);
+    TextProperties tp = texts.get(texts.size()-1);
+    tp.paint.setTypeface(typeface);
+    reclampText();
+    invalidate();
   }
 
   /**
@@ -240,7 +402,8 @@ public class TextImageView extends ImageView {
    * @see <a href="http://developer.android.com/reference/android/graphics/Color.html">android.graphics.Color</a>
    */
   public void setTextColor(int color) {
-    paint.setColor(color);
+    TextProperties tp = texts.get(texts.size()-1);
+    tp.paint.setColor(color);
     invalidate();
   }
 
@@ -250,8 +413,12 @@ public class TextImageView extends ImageView {
    * @param textSize The scaled pixel size.
    */
   public void setTextSize(float textSize) {
-    paint.setTextSize(textSize);
-    setText(text);
+    TextProperties tp = texts.get(texts.size()-1);
+    tp.scale = 1f;
+    tp.size  = textSize;
+    tp.paint.setTextSize(textSize);
+    reclampText();
+    invalidate();
   }
 
   /**
@@ -259,7 +426,9 @@ public class TextImageView extends ImageView {
    * @return Pointf containing x and y offsets, as a per-one value. Eg. (0,0)=top-left, (1,1)=bottom-right.
    */
   public PointF getTextPosition() {
-    return new PointF(textPosition.x / imageRect.width(), textPosition.y / imageRect.height());
+    RectF enclosingRect = calculateEnclosingRect();
+    enclosingRect.offset(-imageRect.left, -imageRect.top);
+    return new PointF(enclosingRect.left / imageRect.width(), enclosingRect.top / imageRect.height());
   }
 
   /**
@@ -275,6 +444,7 @@ public class TextImageView extends ImageView {
    * @return Relative size. Eg. 0.5=text half the height of the image.
    */
   public float getTextRelativeSize() {
-    return paint.getTextSize() / imageRect.height();
+    TextProperties tp = texts.get(texts.size()-1);
+    return tp.paint.getTextSize() / imageRect.height();
   }
 }

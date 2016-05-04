@@ -21,5 +21,7 @@
         app:tiv_panEnabled="true"
         app:tiv_clampTextMode="textInside"
         app:tiv_interline="10sp"
+        app:tiv_scaleEnabled="true"
+        app:tiv_rotationEnabled="true"
         android:src="@drawable/sample"/>
 </LinearLayout>
