@@ -21,7 +21,7 @@ Android 2.2, API 8
 
 ```groovy
 dependencies {
-  compile 'com.antonionicolaspina:textimageview:3.0.0'
+  compile 'com.antonionicolaspina:textimageview:3.1.0'
 }
 ```
 

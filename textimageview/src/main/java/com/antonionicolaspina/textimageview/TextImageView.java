@@ -396,6 +396,30 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
   }
 
   /**
+   * Enable or disable user-pan for the view.
+   * @param enabled Whether panning should be enabled.
+   */
+  public void setPanEnabled(boolean enabled) {
+    panEnabled = enabled;
+  }
+
+  /**
+   * Enable or disable user-scaling for the view.
+   * @param enabled Whether scaling should be enabled.
+   */
+  public void setScaleEnabled(boolean enabled) {
+    scaleEnabled = enabled;
+  }
+
+  /**
+   * Enable or disable user-rotation for the view.
+   * @param enabled Whether rotation should be enabled.
+   */
+  public void setRotationEnabled(boolean enabled) {
+    rotationEnabled = enabled;
+  }
+
+  /**
    * Set the text color.
    * @param color Color in the format of <a href="http://developer.android.com/reference/android/graphics/Color.html">android.graphics.Color</a>.
    *
