@@ -473,4 +473,22 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     TextProperties tp = texts.get(texts.size()-1);
     return tp.paint.getTextSize() / imageRect.height();
   }
+
+  /**
+   * Get the text rotation.
+   * @return Rotation angle.
+   */
+  public float getTextRotation() {
+    TextProperties tp = texts.get(texts.size()-1);
+    return tp.rotation;
+  }
+
+  /**
+   * Return rotation center for the text on top.
+   * @return Pointf containing x and y offsets, as a per-one value. Eg. (0,0)=top-left, (1,1)=bottom-right.
+   */
+  public PointF getTextRelativeRotationCenter() {
+    TextProperties tp = texts.get(texts.size()-1);
+    return new PointF(tp.rotationCenter.x / imageRect.width(), tp.rotationCenter.y / imageRect.height());
+  }
 }
