@@ -320,6 +320,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
       tp.scale *= scaleGestureDetector.getScaleFactor();
       tp.paint.setTextSize(Math.max(minSize, Math.min(tp.scale * tp.size, maxSize)));
       tp.scale = tp.paint.getTextSize() / tp.size;
+      tp.setText(tp.text);
       reclampText();
       invalidate();
     }
@@ -441,6 +442,7 @@ public class TextImageView extends ImageView implements ScaleGestureDetector.OnS
     tp.scale = 1f;
     tp.size  = textSize;
     tp.paint.setTextSize(textSize);
+    tp.setText(tp.text);
     reclampText();
     invalidate();
   }
