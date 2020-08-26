@@ -1,5 +1,8 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven-publish'
 
+/*
 ext {
   bintrayRepo = 'maven'
   bintrayName = 'textimageview'
@@ -23,14 +26,64 @@ ext {
   licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
   allLicenses = ["Apache-2.0"]
 }
+*/
+//region Publish to jCenter
+def libGroupId = 'com.antonionicolaspina'
+def libArtifactId = 'textimageview'
+def libVersion = '3.1.2'
+def libDesc = 'An ImageView subclass that draws one or more spannable, rotable, scalable texts on top of the image.'
+def libLicenses = ['Apache-2.0']
+def libVCSUrl = 'https://github.com/ANPez/TextImageView.git'
+
+// Generate Source Jar
+task sourceJar(type: Jar) {
+  from android.sourceSets.main.java.srcDirs
+  classifier "sources"
+}
+
+// Create the publication with the pom configuration
+publishing {
+  publications {
+    MyPublication(MavenPublication) {
+      groupId libGroupId
+      artifactId libArtifactId
+      version libVersion
+      artifact(sourceJar)
+      artifact("$buildDir/outputs/aar/$libArtifactId-release.aar")
+    }
+  }
+}
+
+// Bintray config
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+  user = properties.getProperty("bintray.user")
+  key = properties.getProperty("bintray.apikey")
+  publications = ['MyPublication']
+  pkg {
+    repo = "maven"
+    name = "$libGroupId:$libArtifactId"
+    desc = libDesc
+    licenses = libLicenses
+    vcsUrl = libVCSUrl
+    version {
+      name = libVersion
+      vcsTag = libVersion
+      released = new Date()
+    }
+  }
+}
+//endregion
 
 android {
-  compileSdkVersion 24
-  buildToolsVersion "23.0.3"
+  compileSdkVersion 30
+  buildToolsVersion "29.0.2"
 
   defaultConfig {
-    minSdkVersion 8
-    targetSdkVersion 24
+    minSdkVersion 14
+    targetSdkVersion 30
     versionCode 11
     versionName "3.1.2"
   }
@@ -43,9 +96,6 @@ android {
 }
 
 dependencies {
-  compile fileTree(dir: 'libs', include: ['*.jar'])
-  testCompile 'junit:junit:4.12'
+  implementation fileTree(dir: 'libs', include: ['*.jar'])
+  testImplementation 'junit:junit:4.12'
 }
-
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
