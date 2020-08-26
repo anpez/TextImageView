@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">TextImageView</string>
     <string name="sample_text">Sample text\nwith multiline\nsupport!</string>
+    <string name="add_text">Add more text</string>
 </resources>

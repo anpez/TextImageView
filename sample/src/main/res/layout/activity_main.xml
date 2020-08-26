@@ -1,27 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
-        android:id="@+id/text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+      android:id="@+id/text"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"/>
 
     <com.antonionicolaspina.textimageview.TextImageView
-        android:id="@+id/text_image"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/sample_text"
-        android:textSize="30sp"
-        android:textColor="#ff0000"
-        app:tiv_panEnabled="true"
-        app:tiv_clampTextMode="textInside"
-        app:tiv_interline="10sp"
-        app:tiv_scaleEnabled="true"
-        app:tiv_rotationEnabled="true"
-        android:src="@drawable/sample"/>
+      android:id="@+id/text_image"
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1"
+      android:text="@string/sample_text"
+      android:textSize="30sp"
+      android:textColor="#ff0000"
+      app:tiv_panEnabled="true"
+      app:tiv_clampTextMode="textInside"
+      app:tiv_interline="10sp"
+      app:tiv_scaleEnabled="true"
+      app:tiv_rotationEnabled="true"
+      android:src="@drawable/sample"/>
+
+    <Button
+      android:layout_margin="@dimen/activity_horizontal_margin"
+      android:layout_gravity="center_horizontal"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/add_text" />
 </LinearLayout>
