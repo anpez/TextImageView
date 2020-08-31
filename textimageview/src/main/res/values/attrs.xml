@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="TextImageView">
-        <!-- Text being drawn over the image -->
-        <attr name="android:text"/>
-
-        <!-- Color to apply to the text being drawn over the image -->
-        <attr name="android:textColor"/>
-
-        <!-- Size of the text being drawn over the image -->
-        <attr name="android:textSize"/>
-
         <!-- Whether or not to allow the user to scale the text -->
         <attr name="tiv_scaleEnabled" format="boolean" />
+
+        <!-- Initial size of the text being drawn over the image -->
+        <attr name="tiv_initialTextSize" format="dimension"/>
 
         <!-- Minimum size of the text being drawn over the image -->
         <attr name="tiv_minTextSize" format="dimension"/>
@@ -24,18 +18,5 @@
 
         <!-- Whether or not to allow the user to rotate the text -->
         <attr name="tiv_rotationEnabled" format="boolean" />
-
-        <!-- Whether or not to allow the user to move the text -->
-        <attr name="tiv_interline" format="dimension" />
-
-        <!-- Controls how the the positioning behaves in relation to the image -->
-        <attr name="tiv_clampTextMode" format="enum">
-            <!-- Do not limit text position -->
-            <enum name="unlimited" value="0" />
-            <!-- Top-left corner inside the area of the image -->
-            <enum name="originInside" value="1" />
-            <!-- The whole text should fit inside the area of the image -->
-            <enum name="textInside" value="2" />
-        </attr>
     </declare-styleable>
 </resources>

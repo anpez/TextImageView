@@ -9,19 +9,18 @@ An ImageView subclass that draws one or more spannable, rotable, scalable texts 
 
 Provided that this is an ImageView subclass, you can use Picasso, Glide, or any Image loader that you like to load the image into TextImageView.
 
-## New in 3.0
-You can enable text scale and rotation via multitouch gestures just by declaring it in your layout.
-Now you can stack multiple texts one on top of the other and control them.
+## New in 4.0
+Rewritten in kotlin+androidx
 
 ## Requirements
-Android 2.2, API 8
+Android 4.0, API 14
 
 ## Usage
 ### Gradle dependency
 
 ```groovy
 dependencies {
-  compile 'com.antonionicolaspina:textimageview:3.1.2'
+  implementation 'com.antonionicolaspina:textimageview:4.0'
 }
 ```
 
@@ -35,15 +34,13 @@ dependencies {
     android:textSize="30sp"
     android:textColor="#ff0000"
     app:tiv_panEnabled="true"
-    app:tiv_clampTextMode="textInside"
-    app:tiv_interline="10sp"
     app:tiv_scaleEnabled="true"
     app:tiv_rotationEnabled="true"
     android:src="@drawable/sample"/>
 ```
 
 ## License
-    Copyright 2016 Antonio Nicolás Pina
+    Copyright 2020 YaikoStudio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
