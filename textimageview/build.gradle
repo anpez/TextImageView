@@ -40,7 +40,7 @@ bintray {
   publications = ['MyPublication']
   pkg {
     repo = "maven"
-    name = "$libGroupId:$libArtifactId"
+    name = libArtifactId
     desc = libDesc
     licenses = libLicenses
     vcsUrl = libVCSUrl
