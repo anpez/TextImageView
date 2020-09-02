@@ -6,7 +6,7 @@ import android.graphics.PointF
 import android.graphics.Rect
 
 internal data class TextProperties(
-    val text: String,
+    var text: String,
     val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG),
     val position: PointF = PointF(),
     var scaleFactor: Float = 1f,

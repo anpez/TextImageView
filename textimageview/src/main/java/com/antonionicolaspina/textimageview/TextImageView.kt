@@ -87,6 +87,17 @@ class TextImageView
   }
 
   /**
+   * Change selected text.
+   * @param text The text.
+   */
+  fun changeText(text: String) {
+    selectedText?.let {
+      it.text = text
+      textChanged(it)
+    }
+  }
+
+  /**
    * Set the typeface to use for the text.
    * @param typeface The typeface to be used.
    */
@@ -120,6 +131,12 @@ class TextImageView
     texts.add(tp)
     selectedText = tp
     textChanged(tp)
+  }
+
+  fun getTexts(): List<Text> {
+    val w = measuredWidth
+    val h = measuredHeight
+    return texts.map { it.toText(w, h) }
   }
 
   //region Gestures
@@ -210,8 +227,6 @@ class TextImageView
       )
     }
 
-    val w = measuredWidth
-    val h = measuredHeight
-    listener?.textsChanged(texts.map { it.toText(w, h) })
+    listener?.textsChanged(getTexts())
   }
 }
