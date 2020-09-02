@@ -6,7 +6,7 @@ apply plugin: 'maven-publish'
 //region Publish to jCenter
 def libGroupId = 'com.antonionicolaspina'
 def libArtifactId = 'textimageview'
-def libVersion = '4.0.2'
+def libVersion = '4.0.3'
 def libDesc = 'An ImageView subclass that draws one or more spannable, rotable, scalable texts on top of the image.'
 def libLicenses = ['Apache-2.0']
 def libVCSUrl = 'https://github.com/ANPez/TextImageView.git'
@@ -69,8 +69,8 @@ android {
   defaultConfig {
     minSdkVersion 14
     targetSdkVersion 30
-    versionCode 14
-    versionName "4.0.2"
+    versionCode 15
+    versionName "4.0.3"
   }
   buildTypes {
     release {

@@ -128,6 +128,10 @@ class TextImageView
   fun addText(text: String) {
     val tp = TextProperties(text)
     tp.paint.textSize = initialTextSize
+    tp.paint.getTextBounds(tp.text, 0, tp.text.length, tp.boundingRect)
+    tp.position.x = measuredWidth/2f-tp.boundingRect.exactCenterX()
+    tp.position.y = measuredHeight/2f-tp.boundingRect.exactCenterY()
+
     texts.add(tp)
     selectedText = tp
     textChanged(tp)
