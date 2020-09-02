@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
       text_image.addText("Text ${Date()}")
       text_image.setTypeface(Typeface.DEFAULT_BOLD)
       text_image.setTextColor(Color.RED)
+      text_image.addDropShadow()
     }
   }
 }

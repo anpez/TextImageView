@@ -3,6 +3,7 @@ package com.antonionicolaspina.textimageview
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -12,8 +13,10 @@ import androidx.core.graphics.contains
 import androidx.core.graphics.toPoint
 import androidx.core.graphics.withMatrix
 import com.mapbox.android.gestures.*
+import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 
 
 class TextImageView
@@ -137,6 +140,19 @@ class TextImageView
     textChanged(tp)
   }
 
+  /**
+   * Adds a drop shadow
+   */
+  fun addDropShadow(angle: Float = 45f, distance: Float = 0.02f, @ColorInt color: Int = Color.argb(0x80, 0, 0, 0)) {
+    selectedText?.let {
+      val textSize = it.paint.textSize
+      it.paint.setShadowLayer(1f, textSize*cos(angle)*distance, textSize*sin(angle)*distance, color)
+    }
+  }
+
+  /**
+   * Returns all texts' data
+   */
   fun getTexts(): List<Text> {
     val w = measuredWidth
     val h = measuredHeight

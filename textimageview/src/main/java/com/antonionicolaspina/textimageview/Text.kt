@@ -8,6 +8,7 @@ data class Text(
     val text: String,
     @ColorInt val textColor: Int,
     val textSize: Float,
+    //val shadowSize: Float,
     val typeface: Typeface?,
     val position: PointF = PointF(),
     var scaleFactor: Float = 1f,
