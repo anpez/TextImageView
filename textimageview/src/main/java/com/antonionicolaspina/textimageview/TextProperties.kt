@@ -19,6 +19,7 @@ internal data class TextProperties(
     fun toText(w: Int, h: Int) = Text(
         text,
         paint.color,
+        paint.textSize/h,
         paint.typeface,
         PointF(position.x/w, position.y/h),
         scaleFactor,
