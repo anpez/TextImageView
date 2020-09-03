@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.PointF
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -110,6 +111,30 @@ class TextImageView
       textChanged(it)
     }
   }
+
+  fun setPosition(position: PointF) {
+    selectedText?.let {
+      it.position.x = position.x*measuredWidth
+      it.position.y = position.y*measuredHeight
+      textChanged(it)
+    }
+  }
+
+  fun setScaleFactor(scale: Float) {
+    selectedText?.let {
+      it.scaleFactor = scale
+      textChanged(it)
+    }
+  }
+
+  fun setRotationDegrees(rotation: Float) {
+    selectedText?.let {
+      it.rotationDegress = rotation
+      textChanged(it)
+    }
+  }
+
+  fun getSelected() = selectedText?.toText(measuredWidth, measuredHeight)
 
   /**
    * Set the text color.
