@@ -24,6 +24,7 @@
           app:tiv_panEnabled="true"
           app:tiv_scaleEnabled="true"
           app:tiv_rotationEnabled="true"
+          app:tiv_deleteEnabled="true"
           android:src="@drawable/sample"/>
     </FrameLayout>
 

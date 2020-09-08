@@ -1,29 +1,26 @@
 package com.antonionicolaspina.textimageview
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.PointF
-import android.graphics.Typeface
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.widget.ImageView
+import android.view.animation.LinearInterpolator
 import androidx.annotation.ColorInt
+import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.contains
 import androidx.core.graphics.toPoint
+import androidx.core.graphics.toRectF
 import androidx.core.graphics.withMatrix
 import com.mapbox.android.gestures.*
-import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.sin
-
+import kotlin.math.*
 
 class TextImageView
 @JvmOverloads constructor(
   context: Context, attributeSet: AttributeSet? = null, defStyleAttr: Int = 0
-): ImageView(context, attributeSet, defStyleAttr) {
+): AppCompatImageView(context, attributeSet, defStyleAttr) {
   interface Listener {
     fun textsChanged(texts: List<Text>)
   }
@@ -31,6 +28,8 @@ class TextImageView
   var panEnabled = false
   var scaleEnabled = false
   var rotationEnabled = false
+  val deleteEnabled: Boolean
+
   var listener: Listener? = null
   var initialTextSize = 0f
   var minTextSize = 0f
@@ -39,31 +38,38 @@ class TextImageView
   private val texts = mutableListOf<TextProperties>()
   private var selectedText: TextProperties? = null
 
+  private var deleteAreaVisible = false
+  private val deleteAreaHeight = context.resources.getDimensionPixelSize(R.dimen.tiv_delete_area_height)
+  private val deleteButtonHeight = context.resources.getDimensionPixelSize(R.dimen.tiv_delete_button_height)
+  private val deleteDrawable = ContextCompat.getDrawable(context, R.drawable.ic_trash)!!
+  private var deleteButtonScale = 1f
+
   init {
     context.theme.obtainStyledAttributes(attributeSet, R.styleable.TextImageView, 0, 0).apply {
       try {
         panEnabled = getBoolean(R.styleable.TextImageView_tiv_panEnabled, false)
         scaleEnabled = getBoolean(R.styleable.TextImageView_tiv_scaleEnabled, false)
         rotationEnabled = getBoolean(R.styleable.TextImageView_tiv_rotationEnabled, false)
+        deleteEnabled = getBoolean(R.styleable.TextImageView_tiv_deleteEnabled, false)
 
-        initialTextSize = getDimensionPixelSize(
-          R.styleable.TextImageView_tiv_initialTextSize, resources.getDimensionPixelSize(
-            R.dimen.default_text_size
-          )
-        ).toFloat()
-        minTextSize = getDimensionPixelSize(
-          R.styleable.TextImageView_tiv_minTextSize, resources.getDimensionPixelSize(
-            R.dimen.default_min_text_size
-          )
-        ).toFloat()
-        maxTextSize = getDimensionPixelSize(
-          R.styleable.TextImageView_tiv_maxTextSize, resources.getDimensionPixelSize(
-            R.dimen.default_max_text_size
-          )
-        ).toFloat()
+        initialTextSize = getDimensionPixelSize(R.styleable.TextImageView_tiv_initialTextSize, resources.getDimensionPixelSize(
+            R.dimen.tiv_default_text_size
+          )).toFloat()
+        minTextSize = getDimensionPixelSize(R.styleable.TextImageView_tiv_minTextSize, resources.getDimensionPixelSize(
+            R.dimen.tiv_default_min_text_size
+          )).toFloat()
+        maxTextSize = getDimensionPixelSize(R.styleable.TextImageView_tiv_maxTextSize, resources.getDimensionPixelSize(R.dimen.tiv_default_max_text_size)).toFloat()
       } finally {
         recycle()
       }
+    }
+    if (deleteEnabled) {
+      setPadding(
+        paddingLeft,
+        paddingTop,
+        paddingRight,
+        paddingBottom+deleteAreaHeight
+      )
     }
   }
 
@@ -72,6 +78,20 @@ class TextImageView
 
     if (isInEditMode && texts.isEmpty()) {
       setText("sample text")
+    }
+
+    if (deleteEnabled && deleteAreaVisible) {
+      val w = measuredWidth
+      val h = measuredHeight
+
+      val buttonSize = getDeleteButtonSize()
+      deleteDrawable.setBounds(
+        (w-buttonSize)/2,
+        h-deleteAreaHeight+(deleteAreaHeight-buttonSize)/2,
+        (w+buttonSize)/2,
+        h-(deleteAreaHeight-buttonSize)/2
+      )
+      deleteDrawable.draw(canvas)
     }
 
     texts.forEach { tp ->
@@ -168,10 +188,22 @@ class TextImageView
   /**
    * Adds a drop shadow
    */
-  fun addDropShadow(angle: Float = 45f, distance: Float = 0.02f, @ColorInt color: Int = Color.argb(0x80, 0, 0, 0)) {
+  fun addDropShadow(
+    angle: Float = 45f, distance: Float = 0.02f, @ColorInt color: Int = Color.argb(
+      0x80,
+      0,
+      0,
+      0
+    )
+  ) {
     selectedText?.let {
       val textSize = it.paint.textSize
-      it.paint.setShadowLayer(1f, textSize*cos(angle)*distance, textSize*sin(angle)*distance, color)
+      it.paint.setShadowLayer(
+        1f,
+        textSize * cos(angle) * distance,
+        textSize * sin(angle) * distance,
+        color
+      )
     }
   }
 
@@ -184,6 +216,7 @@ class TextImageView
     return texts.map { it.toText(w, h) }
   }
 
+  private var valueAnimator: ValueAnimator? = null
   //region Gestures
   private val androidGesturesManager = AndroidGesturesManager(context).apply {
     setMoveGestureListener(object : MoveGestureDetector.SimpleOnMoveGestureListener() {
@@ -193,13 +226,67 @@ class TextImageView
         distanceY: Float
       ): Boolean {
         if (panEnabled) {
-          selectedText?.let {
-            it.position.x -= distanceX
-            it.position.y -= distanceY
-            textChanged(it)
+          selectedText?.let { tp ->
+            tp.position.x -= distanceX
+            tp.position.y -= distanceY
+            textChanged(tp)
+
+            if (deleteEnabled && deleteAreaVisible) {
+              if (inDeleteArea(tp)) {
+                ValueAnimator.ofFloat(deleteButtonScale, 1.5f)
+                  .setDuration(200)
+                  .apply {
+                    interpolator = LinearInterpolator()
+                    addUpdateListener {
+                      deleteButtonScale = it.animatedValue as Float
+                      invalidate()
+                    }
+                    start()
+                    valueAnimator = this
+                  }
+              } else {
+                ValueAnimator.ofFloat(deleteButtonScale, 1f)
+                  .setDuration(200)
+                  .apply {
+                    interpolator = LinearInterpolator()
+                    addUpdateListener {
+                      deleteButtonScale = it.animatedValue as Float
+                      invalidate()
+                    }
+                    start()
+                    valueAnimator = this
+                  }
+              }
+            }
           }
         }
         return true
+      }
+
+      override fun onMoveBegin(detector: MoveGestureDetector): Boolean {
+        if (deleteEnabled) {
+          if (null != selectedText) {
+            deleteButtonScale = 1f
+            deleteAreaVisible = true
+            invalidate()
+          }
+        }
+        return true
+      }
+
+      override fun onMoveEnd(detector: MoveGestureDetector, velocityX: Float, velocityY: Float) {
+        if (deleteEnabled && deleteAreaVisible) {
+          deleteAreaVisible = false
+          if (true == valueAnimator?.isRunning) {
+            valueAnimator?.cancel()
+            valueAnimator = null
+          }
+          deleteButtonScale = 1f
+          selectedText?.let {
+            checkDeleted(it)
+          }
+          invalidate()
+        }
       }
     })
 
@@ -247,6 +334,31 @@ class TextImageView
         return true
       }
     })
+  }
+
+  private fun getDeleteButtonSize() = (deleteButtonHeight*deleteButtonScale).roundToInt()
+  private fun inDeleteArea(tp: TextProperties): Boolean {
+    val w = measuredWidth
+    val h = measuredHeight
+    val buttonSize = getDeleteButtonSize()
+    val r = RectF(
+      (w-buttonSize)/2f,
+      h-deleteAreaHeight+(deleteAreaHeight-buttonSize)/2f,
+      (w+buttonSize)/2f,
+      h-(deleteAreaHeight-buttonSize)/2f
+    )
+
+    val boundingRect = tp.boundingRect.toRectF()
+    tp.matrix.mapRect(boundingRect)
+    return r.intersect(boundingRect)
+  }
+
+  private fun checkDeleted(tp: TextProperties) {
+    if (inDeleteArea(tp)) {
+      texts.remove(tp)
+      invalidate()
+      listener?.textsChanged(getTexts())
+    }
   }
 
   @SuppressLint("ClickableViewAccessibility")

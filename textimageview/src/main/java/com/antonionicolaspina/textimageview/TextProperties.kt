@@ -1,9 +1,6 @@
 package com.antonionicolaspina.textimageview
 
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.PointF
-import android.graphics.Rect
+import android.graphics.*
 
 internal data class TextProperties(
     var text: String,
@@ -32,5 +29,10 @@ internal data class TextProperties(
         inverseMatrix.mapPoints(floats)
 
         return PointF(floats[0], floats[1])
+    }
+
+    fun inverseMap(r: RectF) {
+        matrix.invert(inverseMatrix)
+        inverseMatrix.mapRect(r)
     }
 }

@@ -6,7 +6,7 @@ apply plugin: 'maven-publish'
 //region Publish to jCenter
 def libGroupId = 'com.antonionicolaspina'
 def libArtifactId = 'textimageview'
-def libVersion = '4.2.0'
+def libVersion = '4.3.0'
 def libDesc = 'An ImageView subclass that draws one or more spannable, rotable, scalable texts on top of the image.'
 def libLicenses = ['Apache-2.0']
 def libVCSUrl = 'https://github.com/ANPez/TextImageView.git'
@@ -69,8 +69,8 @@ android {
   defaultConfig {
     minSdkVersion 14
     targetSdkVersion 30
-    versionCode 420
-    versionName "4.2.0"
+    versionCode 430
+    versionName "4.3.0"
   }
   buildTypes {
     release {
@@ -83,6 +83,7 @@ android {
 dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
   testImplementation 'junit:junit:4.13'
+  implementation 'androidx.appcompat:appcompat:1.2.0'
   implementation "androidx.core:core-ktx:1.3.1"
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
   api 'com.mapbox.mapboxsdk:mapbox-android-gestures:0.7.0'
