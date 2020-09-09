@@ -23,6 +23,7 @@ class TextImageView
 ): AppCompatImageView(context, attributeSet, defStyleAttr) {
   interface Listener {
     fun textsChanged(texts: List<Text>)
+    fun textTapped(text: Text)
   }
 
   var panEnabled = false
@@ -76,8 +77,11 @@ class TextImageView
   override fun onDraw(canvas: Canvas) {
     super.onDraw(canvas)
 
-    if (isInEditMode && texts.isEmpty()) {
-      setText("sample text")
+    if (isInEditMode) {
+      if (texts.isEmpty()) {
+        setText("sample text")
+      }
+      deleteAreaVisible = deleteEnabled
     }
 
     if (deleteEnabled && deleteAreaVisible) {
@@ -331,6 +335,19 @@ class TextImageView
           }
         }
         invalidate()
+        return true
+      }
+
+      override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+        val listener = listener
+        val selectedText = selectedText
+        if ( (null!=selectedText) && (null != listener) ) {
+          val p = selectedText.inverseMap(e.x, e.y)
+
+          if (selectedText.boundingRect.contains(p.toPoint())) {
+            listener.textTapped(selectedText.toText(measuredWidth, measuredHeight))
+          }
+        }
         return true
       }
     })

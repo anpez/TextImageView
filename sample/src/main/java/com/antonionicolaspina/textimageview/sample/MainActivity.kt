@@ -3,6 +3,7 @@ package com.antonionicolaspina.textimageview.sample
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.antonionicolaspina.textimageview.Text
 import com.antonionicolaspina.textimageview.TextImageView
@@ -17,6 +18,10 @@ class MainActivity : AppCompatActivity() {
     text_image.listener = object : TextImageView.Listener {
       override fun textsChanged(texts: List<Text>) {
         position_textview.text = texts.joinToString("\n")
+      }
+
+      override fun textTapped(text: Text) {
+        Toast.makeText(this@MainActivity, "Tapped ${text.text}", Toast.LENGTH_SHORT).show()
       }
     }
 
